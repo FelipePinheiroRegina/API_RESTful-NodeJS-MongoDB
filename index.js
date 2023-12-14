@@ -4,12 +4,12 @@ const app = express()  // starta o arquivo express
 
 // Forma de ler JSON - Middlewares -> Recursos que são executados entre nossas requisições e respostas
 app.use(
-    express.urlencoded({  // Lê JSON essa configuração
+    express.urlencoded({  // Lê JSON. Essa configuração
         extended: true,
     }),
 )
 
-app.use(express.json()) // Responde JSON esaa configuração
+app.use(express.json()) // Responde JSON. Essa configuração
 
 // Rota inicial - endpoint
 app.get('/', (req, res) => {  // a '/' = ponto de acesso, (req, res) é um padrão, onde você recebe uma requisição e pode responder se desejar
