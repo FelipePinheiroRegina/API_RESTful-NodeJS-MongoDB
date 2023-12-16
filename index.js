@@ -5,6 +5,8 @@ const app = express()  // starta o arquivo express
 // depois do db
 const mongoose = require('mongoose') // Importa o arquivo mongoose
 
+const Person = require('./models/Person') // acesso ao models e a tabela, esse comando permite você fazer alterações aqui nesta aba
+
 // Forma de ler JSON - Middlewares -> Recursos que são executados entre nossas requisições e respostas
 app.use(
     express.urlencoded({  // Lê JSON. Essa configuração
@@ -15,9 +17,71 @@ app.use(
 app.use(express.json()) // Responde JSON. Essa configuração
 
 // ROTAS DA API
-const personRoutes = require('./routes/personRoutes')
+// Rotas da API
+// Utilizando o post, pois estamos enviando dados 
+// /person é um padrão de rota definido, poderia ser qualquer coisa, mas algo que faça sentido 
+// async é uma função assíncrona, eu tenho que fazer uma operação com o banco de dados e ela tem que demorar um tempo x, async garante que esse tempo seja respeitado
+app.post('/person', async (req, res) => { 
+    // req.body é as informações que chegam do usuário
+    // estou contando que as informações venham assim: {name:'Felipe, salary: 5000, approved: true}. Função destructed do js moderno
+    const { name, salary, approved } = req.body
 
-app.use('/person', personRoutes)
+    if(!name) {
+        res.status(422).json({error: 'O nome é obrigatório!'})
+        return
+    }
+    
+    // pra facilitar vou criar esse objeto com os atributos, ai eu passo ele pro meu banco inserir
+    const person = { 
+        name,
+        salary,
+        approved,
+    }
+
+    // try e catch para tratar os possiveis erros do meu servidor
+    try {
+        // Criando dados
+        await Person.create(person) // esperando salvar o dados
+
+        res.status(201).json({message: 'Pessoa inserida no banco de dados com sucesso!'}) // envia uma mensagem com o status e uma mensagem de sucesso para o usuario
+    
+    } catch(error) {
+        
+        res.status(500).json({erro: error}) // mandando a msg no formato json
+    }
+    
+})
+
+// LEITURA DE DADOS
+// essa chamada vai retornar todos os dados para o meu usuário
+app.get('/person', async (req, res) => {
+    try {
+        const people = await Person.find()  // await -> espera todos os dados virem para depois dar a resposta
+        
+        res.status(200).json(people) // status 200 -> ocorreu tudo certo!, enviar todos os dados da tabela person em formato json para meu usuário
+    } catch(error) {
+        res.status(500).json({ error: error})
+    }
+})
+
+app.get('/person/:id', async (req, res) => {
+    // extrair o dado da requisição, pela url = req.params
+    const id = req.params.id
+    try {
+
+        const person = await Person.findOne({ _id: id}) // o findOne encontra somente um resultado
+        // no Mongodb o id vem como _id
+        
+        if(!person) {
+            res.status(422).json({message: 'Usuário não encontrado'})
+            return
+        }
+
+        res.status(200).json(person)
+    } catch {
+        res.status(500).json({ error: error})
+    }
+})
 
 // Rota inicial - endpoint
 // a '/' = ponto de acesso, (req, res) é um padrão, onde você recebe uma requisição e pode responder se desejar
